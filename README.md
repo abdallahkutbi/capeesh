@@ -27,6 +27,9 @@ cp .env.example .env
 # - EXPO_PUBLIC_CONVEX_URL
 # - EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
 # - EXPO_PUBLIC_OPENAI_API_KEY
+# Fill in your keys:
+#AI we could use gemini
+# - EXPO_PUBLIC_GEMINI_API_KEY
 ```
 
 3. Initialize Convex:

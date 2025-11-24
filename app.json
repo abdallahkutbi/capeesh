@@ -19,7 +19,8 @@
       "bundleIdentifier": "com.periodiccomprehension.ereader"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-web-browser"
     ],
     "scheme": "periodic-comprehension",
     "web": {
@@ -27,4 +28,3 @@
     }
   }
 }
-

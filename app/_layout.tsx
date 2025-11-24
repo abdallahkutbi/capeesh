@@ -1,4 +1,5 @@
-import { ClerkProvider } from '@clerk/expo';
+import { ClerkProvider } from '@clerk/clerk-expo';
+import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { Slot } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -11,8 +12,9 @@ const convexClient = new ConvexReactClient(
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider
+      <ClerkProvider 
         publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || ''}
+        tokenCache={tokenCache}
       >
         <ConvexProvider client={convexClient}>
           <Slot />

@@ -1,5 +1,3 @@
-/* prettier-ignore-start */
-
 /* eslint-disable */
 /**
  * Generated `api` utility.
@@ -7,40 +5,53 @@
  * THIS CODE IS AUTOMATICALLY GENERATED.
  *
  * To regenerate, run `npx convex dev`.
- *
  * @module
  */
+
+import type * as books from "../books.js";
+import type * as quizzes from "../quizzes.js";
+import type * as readingSessions from "../readingSessions.js";
+import type * as storage from "../storage.js";
+import type * as userProgress from "../userProgress.js";
 
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as books from "../books";
-import type * as quizzes from "../quizzes";
-import type * as readingSessions from "../readingSessions";
-import type * as schema from "../schema";
-import type * as userProgress from "../userProgress";
+
+declare const fullApi: ApiFromModules<{
+  books: typeof books;
+  quizzes: typeof quizzes;
+  readingSessions: typeof readingSessions;
+  storage: typeof storage;
+  userProgress: typeof userProgress;
+}>;
 
 /**
- * A utility for referencing Convex functions in your app.
+ * A utility for referencing Convex functions in your app's public API.
  *
- * @public
+ * Usage:
+ * ```js
+ * const myFunctionReference = api.myModule.myFunction;
+ * ```
  */
-const fullApi = {
-  books: books,
-  quizzes: quizzes,
-  readingSessions: readingSessions,
-  schema: schema,
-  userProgress: userProgress,
-} as const;
-
-export type Api = ApiFromModules<typeof fullApi>;
-
-export const api: FilterApi<
+export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, any>
-> = fullApi;
+  FunctionReference<any, "public">
+>;
 
-/* prettier-ignore-end */
+/**
+ * A utility for referencing Convex functions in your app's internal API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = internal.myModule.myFunction;
+ * ```
+ */
+export declare const internal: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "internal">
+>;
 
+export declare const components: {};
