@@ -1,6 +1,7 @@
 import { useClerk } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
-import { Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View } from 'react-native';
+import { Button } from './button';
 
 export const SignOutButton = () => {
   const { signOut } = useClerk();
@@ -15,25 +16,11 @@ export const SignOutButton = () => {
   };
 
   return (
-    <TouchableOpacity style={styles.button} onPress={handleSignOut}>
-      <Text style={styles.buttonText}>Sign out</Text>
-    </TouchableOpacity>
+    <View className="mt-5">
+      <Button variant="destructive" onPress={handleSignOut}>
+        Sign out
+      </Button>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: '#FF3B30',
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});
 
