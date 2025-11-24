@@ -42,7 +42,7 @@ npm start
 ## 📁 Project Structure
 
 ```
-capish/
+capeesh/
 ├── app/                    # Expo Router screens
 │   ├── _layout.tsx        # Root layout
 │   ├── index.tsx          # Welcome/auth screen
