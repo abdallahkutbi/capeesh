@@ -1,5 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useFonts } from 'expo-font';
+import {
+  DancingScript_700Bold,
+} from '@expo-google-fonts/dancing-script';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -13,20 +17,21 @@ interface SplashScreenProps {
   onFinish: () => void;
 }
 
-const LOGO_TEXT = 'capeesh';
-const SUBTITLE_TEXT = 'Read. Comprehend. Retain.';
+const LOGO_TEXT = 'Capeesh';
 
 export function SplashScreen({ onFinish }: SplashScreenProps) {
+  const [fontsLoaded] = useFonts({
+    DancingScript_700Bold,
+  });
+
   const containerOpacity = useSharedValue(0);
   const cursorOpacity = useSharedValue(1);
   const [displayedLogo, setDisplayedLogo] = useState(LOGO_TEXT);
-  const [displayedSubtitle, setDisplayedSubtitle] = useState(SUBTITLE_TEXT);
   const [isDeleting, setIsDeleting] = useState(false);
   const deletionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const deleteText = useCallback(() => {
     let logoChars = LOGO_TEXT.length;
-    let subtitleChars = SUBTITLE_TEXT.length;
     
     deletionIntervalRef.current = setInterval(() => {
       // Delete logo characters
@@ -34,15 +39,9 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         logoChars--;
         setDisplayedLogo(LOGO_TEXT.substring(0, logoChars));
       }
-      
-      // Delete subtitle characters after logo is partially deleted
-      if (logoChars < LOGO_TEXT.length / 2 && subtitleChars > 0) {
-        subtitleChars--;
-        setDisplayedSubtitle(SUBTITLE_TEXT.substring(0, subtitleChars));
-      }
 
       // When all text is deleted, fade out and finish
-      if (logoChars === 0 && subtitleChars === 0) {
+      if (logoChars === 0) {
         if (deletionIntervalRef.current) {
           clearInterval(deletionIntervalRef.current);
           deletionIntervalRef.current = null;
@@ -54,10 +53,13 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           runOnJS(onFinish)();
         });
       }
-    }, 50); // Delete one character every 50ms for typing effect
+    }, 100); // Delete one character every 100ms for slower typing effect
   }, [containerOpacity, onFinish]);
 
   useEffect(() => {
+    // Wait for fonts to load before starting animations
+    if (!fontsLoaded) return;
+
     // Subtle fade in on entry
     containerOpacity.value = withTiming(1, {
       duration: 800,
@@ -86,7 +88,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         clearInterval(deletionIntervalRef.current);
       }
     };
-  }, [deleteText, containerOpacity, cursorOpacity]);
+  }, [fontsLoaded, deleteText, containerOpacity, cursorOpacity]);
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,
@@ -95,6 +97,11 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const cursorAnimatedStyle = useAnimatedStyle(() => ({
     opacity: cursorOpacity.value,
   }));
+
+  // Don't render until fonts are loaded to ensure font applies immediately
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <Animated.View style={[styles.container, containerAnimatedStyle]}>
@@ -105,14 +112,6 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
             <Animated.Text style={[styles.cursor, cursorAnimatedStyle]}>|</Animated.Text>
           )}
         </Text>
-        <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>
-            {displayedSubtitle}
-            {isDeleting && displayedSubtitle.length > 0 && displayedLogo.length === 0 && (
-              <Animated.Text style={[styles.cursor, cursorAnimatedStyle]}>|</Animated.Text>
-            )}
-          </Text>
-        </View>
       </View>
     </Animated.View>
   );
@@ -123,7 +122,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0F172A', // Deep dark slate background
+    backgroundColor: '#0d1b2a', // Darkest blue-black from palette
   },
   content: {
     alignItems: 'center',
@@ -131,28 +130,24 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 72,
-    fontWeight: '900',
-    color: '#8B5CF6', // Vibrant purple accent
-    letterSpacing: 4,
-    textTransform: 'lowercase',
-    fontFamily: 'System',
-    textShadowColor: 'rgba(139, 92, 246, 0.4)',
-    textShadowOffset: { width: 0, height: 6 },
-    textShadowRadius: 16,
-  },
-  subtitleContainer: {
-    marginTop: 20,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#CBD5E1', // Light slate gray
+    fontWeight: '700',
+    color: '#e0e1dd', // Brightest color from palette for maximum clarity
     letterSpacing: 2,
-    fontWeight: '400',
-    textTransform: 'uppercase',
+    textTransform: 'lowercase',
+    fontFamily: 'DancingScript_700Bold',
+    textShadowColor: 'rgba(224, 225, 221, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    includeFontPadding: false, // Android: removes extra padding for crisper text
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    allowFontScaling: false, // Prevents blurriness from font scaling
   },
   cursor: {
-    color: '#8B5CF6',
-    opacity: 0.8,
+    color: '#e0e1dd', // Match logo color - bright and clear
+    opacity: 1,
+    includeFontPadding: false,
+    allowFontScaling: false,
   },
 });
 
