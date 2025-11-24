@@ -106,10 +106,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   return (
     <Animated.View style={[styles.container, containerAnimatedStyle]}>
       <View style={styles.content}>
-        <Text style={styles.logo}>
+        <Text style={styles.logo} allowFontScaling={false}>
           {displayedLogo}
           {isDeleting && displayedLogo.length > 0 && (
-            <Animated.Text style={[styles.cursor, cursorAnimatedStyle]}>|</Animated.Text>
+            <Animated.Text style={[styles.cursor, cursorAnimatedStyle]} allowFontScaling={false}>|</Animated.Text>
           )}
         </Text>
       </View>
@@ -133,7 +133,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#e0e1dd', // Brightest color from palette for maximum clarity
     letterSpacing: 2,
-    textTransform: 'lowercase',
     fontFamily: 'DancingScript_700Bold',
     textShadowColor: 'rgba(224, 225, 221, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
@@ -141,13 +140,11 @@ const styles = StyleSheet.create({
     includeFontPadding: false, // Android: removes extra padding for crisper text
     textAlign: 'center',
     textAlignVertical: 'center',
-    allowFontScaling: false, // Prevents blurriness from font scaling
   },
   cursor: {
     color: '#e0e1dd', // Match logo color - bright and clear
     opacity: 1,
     includeFontPadding: false,
-    allowFontScaling: false,
   },
 });
 
