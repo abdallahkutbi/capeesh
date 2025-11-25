@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   DancingScript_700Bold,
@@ -18,6 +18,7 @@ interface SplashScreenProps {
 }
 
 const LOGO_TEXT = 'Capeesh';
+const CIRCLE_SIZE = 140;
 
 export function SplashScreen({ onFinish }: SplashScreenProps) {
   const [fontsLoaded] = useFonts({
@@ -26,9 +27,27 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   const containerOpacity = useSharedValue(0);
   const cursorOpacity = useSharedValue(1);
+  const circleScale = useSharedValue(0);
+  const circleOpacity = useSharedValue(0);
   const [displayedLogo, setDisplayedLogo] = useState(LOGO_TEXT);
   const [isDeleting, setIsDeleting] = useState(false);
   const deletionIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { width, height } = useWindowDimensions();
+
+  const circleRevealScale = useMemo(() => {
+    const diagonal = Math.sqrt(width * width + height * height);
+    return (diagonal / CIRCLE_SIZE) + 0.4;
+  }, [width, height]);
+
+  const triggerCircleReveal = useCallback(() => {
+    circleOpacity.value = 1;
+    circleScale.value = withTiming(circleRevealScale, {
+      duration: 650,
+      easing: Easing.out(Easing.ease),
+    }, () => {
+      runOnJS(onFinish)();
+    });
+  }, [circleOpacity, circleScale, circleRevealScale, onFinish]);
 
   const deleteText = useCallback(() => {
     let logoChars = LOGO_TEXT.length;
@@ -46,15 +65,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           clearInterval(deletionIntervalRef.current);
           deletionIntervalRef.current = null;
         }
-        containerOpacity.value = withTiming(0, {
-          duration: 400,
-          easing: Easing.in(Easing.ease),
-        }, () => {
-          runOnJS(onFinish)();
-        });
+        triggerCircleReveal();
       }
     }, 100); // Delete one character every 100ms for slower typing effect
-  }, [containerOpacity, onFinish]);
+  }, [triggerCircleReveal]);
 
   useEffect(() => {
     // Wait for fonts to load before starting animations
@@ -98,6 +112,11 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     opacity: cursorOpacity.value,
   }));
 
+  const circleAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: circleOpacity.value,
+    transform: [{ scale: circleScale.value }],
+  }));
+
   // Don't render until fonts are loaded to ensure font applies immediately
   if (!fontsLoaded) {
     return null;
@@ -106,12 +125,17 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   return (
     <Animated.View style={[styles.container, containerAnimatedStyle]}>
       <View style={styles.content}>
-        <Text style={styles.logo} allowFontScaling={false}>
-          {displayedLogo}
+        <View style={styles.logoRow}>
+          <Text style={styles.logo} allowFontScaling={false}>
+            {displayedLogo}
+          </Text>
           {isDeleting && displayedLogo.length > 0 && (
-            <Animated.Text style={[styles.cursor, cursorAnimatedStyle]} allowFontScaling={false}>|</Animated.Text>
+            <Animated.View style={[styles.cursor, cursorAnimatedStyle]} />
           )}
-        </Text>
+        </View>
+      </View>
+      <View style={styles.circleWrapper} pointerEvents="none">
+        <Animated.View style={[styles.circle, circleAnimatedStyle]} />
       </View>
     </Animated.View>
   );
@@ -128,6 +152,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
   logo: {
     fontSize: 72,
     fontWeight: '700',
@@ -142,9 +170,22 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
   cursor: {
-    color: '#e0e1dd', // Match logo color - bright and clear
-    opacity: 1,
-    includeFontPadding: false,
+    width: 4,
+    height: 62,
+    marginLeft: 6,
+    borderRadius: 2,
+    backgroundColor: '#f4f5f0', // Slightly brighter to mimic hardware caret
+  },
+  circleWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  circle: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
+    backgroundColor: '#f4f5f0',
   },
 });
 
