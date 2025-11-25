@@ -15,4 +15,5 @@ export type { LabelProps } from "./label"
 export { SignOutButton } from "./SignOutButton"
 export { ProtectedRoute } from "./ProtectedRoute"
 export { SplashScreen } from "./SplashScreen"
+export { WelcomeScreen } from "./WelcomeScreen"
 
