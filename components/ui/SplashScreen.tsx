@@ -4,6 +4,8 @@ import { useFonts } from 'expo-font';
 import {
   DancingScript_700Bold,
 } from '@expo-google-fonts/dancing-script';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { BrainIcon as BrainIconSvg } from '@hugeicons/core-free-icons';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -114,12 +116,15 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   return (
     <Animated.View style={[styles.container, containerAnimatedStyle]}>
       <View style={styles.content}>
-        <Text style={styles.logo} allowFontScaling={false}>
-          {displayedLogo}
-          {isDeleting && displayedLogo.length > 0 && (
-            <Animated.Text style={[styles.cursor, cursorAnimatedStyle]} allowFontScaling={false}>|</Animated.Text>
-          )}
-        </Text>
+        <View style={styles.logoRow}>
+          <HugeiconsIcon icon={BrainIconSvg} size={72} color={palette.ivory} />
+          <Text style={styles.logo} allowFontScaling={false}>
+            {displayedLogo}
+            {isDeleting && displayedLogo.length > 0 && (
+              <Animated.Text style={[styles.cursor, cursorAnimatedStyle]} allowFontScaling={false}>|</Animated.Text>
+            )}
+          </Text>
+        </View>
       </View>
     </Animated.View>
   );
@@ -135,6 +140,11 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   logo: {
     fontSize: 72,

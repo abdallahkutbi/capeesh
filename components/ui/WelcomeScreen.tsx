@@ -52,8 +52,8 @@ const floatingBooks = [
   { id: 'green', emoji: '📗', radius: 320, speed: 35000, initialAngle: 288 }, // Farthest, slowest
 ];
 
-const ORBIT_CENTER_X = 160; // Center of 320x320 container
-const ORBIT_CENTER_Y = 160;
+const ORBIT_CENTER_X = 140; // Center of 320x320 container
+const ORBIT_CENTER_Y = 140;
 
 function FloatingBook({
   emoji,
@@ -256,10 +256,6 @@ export function WelcomeScreen() {
 
         <View style={styles.bottomSheet}>
           <View style={styles.sheetHeader}>
-            <View style={styles.logoContainer}>
-              <HugeiconsIcon icon={BrainIconSvg} />
-              <Text style={styles.logoLetter}>C</Text>
-            </View>
             <View style={styles.logoMark}>
               <BrainIcon size={24} color={palette.ivory} />
             </View>
@@ -385,11 +381,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 24,
   },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   logoMark: {
     width: 44,
     height: 44,
@@ -399,9 +390,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoLetter: {
-    color: palette.midnight,
+    color: palette.ivory,
     fontSize: 20,
-    fontWeight: '700',
   },
   dismissButton: {
     width: 36,
