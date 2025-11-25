@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
-  Image,
+  Dimensions,
   Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { BrainIcon as BrainIconSvg } from '@hugeicons/core-free-icons';
 import { useRouter } from 'expo-router';
 import { useAppleSignIn } from './useAppleSignIn';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withRepeat,
+  interpolate,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
+import {
+  Gesture,
+  GestureDetector,
+} from 'react-native-gesture-handler';
 
 const palette = {
   midnight: '#0d1b2a',
@@ -18,41 +34,155 @@ const palette = {
   ivory: '#e0e1dd',
 };
 
-// 8 emojis scattered at varying distances - some close, some far from the brain
-// Orbit container is 320x320, center at 160,160
+// ============================================
+// ORBITAL RING CONFIGURATION
+// ============================================
+// Manage the books' orbital parameters here:
+// - radius: Distance from brain center (in pixels). Smaller = closer orbit
+//   NOTE: Emoji size is 48px, so radii should be spaced at least 60px apart to prevent overlap
+// - speed: Time for one full orbit in milliseconds. Lower = faster orbit
+// - initialAngle: Starting angle in degrees (0-360). 0 = top, 90 = right, 180 = bottom, 270 = left
+// - emoji: The book emoji to display
+// ============================================
 const floatingBooks = [
-  { id: 'stack', emoji: '📚', position: { top: 50, left: 145 } }, // Close to brain, top-right area
-  { id: 'single', emoji: '📖', position: { top: 20, right: 50 } }, // Far from brain, top
-  { id: 'open', emoji: '📕', position: { top: 120, right: 5 } }, // Medium distance, right
-  { id: 'notebook', emoji: '📓', position: { bottom: 40, right: 60 } }, // Close, bottom-right
-  { id: 'green', emoji: '📗', position: { bottom: 5, left: 120 } }, // Far, bottom
-  { id: 'blue', emoji: '📘', position: { bottom: 100, left: 5 } }, // Medium, bottom-left
-  { id: 'orange', emoji: '📙', position: { top: 100, left: 5 } }, // Medium, left
-  { id: 'spiral', emoji: '📔', position: { top: 30, left: 50 } }, // Close, top-left
+  { id: 'stack', emoji: '📚', radius: 80, speed: 20000, initialAngle: 0 }, // Close, slower
+  { id: 'single', emoji: '📖', radius: 140, speed: 30000, initialAngle: 72 }, // Medium, slower
+  { id: 'open', emoji: '📕', radius: 200, speed: 25000, initialAngle: 144 }, // Medium-far, slower
+  { id: 'notebook', emoji: '📓', radius: 260, speed: 22000, initialAngle: 216 }, // Far, slower
+  { id: 'green', emoji: '📗', radius: 320, speed: 35000, initialAngle: 288 }, // Farthest, slowest
 ];
+
+const ORBIT_CENTER_X = 160; // Center of 320x320 container
+const ORBIT_CENTER_Y = 160;
 
 function FloatingBook({
   emoji,
-  position,
+  radius,
+  speed,
+  initialAngle,
 }: {
   emoji: string;
-  position: { top?: number; right?: number; bottom?: number; left?: number };
+  radius: number;
+  speed: number; // milliseconds for full orbit
+  initialAngle: number; // degrees
 }) {
+  const isDragging = useSharedValue(false);
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  const offsetX = useSharedValue(0);
+  const offsetY = useSharedValue(0);
+  const animationProgress = useSharedValue(0);
+  const angleOffset = useSharedValue(0); // Offset from initial angle when snapped
+
+  // Continuous orbital animation
+  useEffect(() => {
+    animationProgress.value = withRepeat(
+      withTiming(1, {
+        duration: speed,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+  }, [speed]);
+
+  // Calculate position from angle
+  const animatedStyle = useAnimatedStyle(() => {
+    if (isDragging.value) {
+      // When dragging, use drag position
+      return {
+        transform: [
+          { translateX: dragX.value + offsetX.value },
+          { translateY: dragY.value + offsetY.value },
+        ],
+      };
+    } else {
+      // When orbiting, calculate from animation progress + angle offset
+      const currentAngle = initialAngle + angleOffset.value + animationProgress.value * 360;
+      const radians = (currentAngle * Math.PI) / 180;
+      const x = Math.cos(radians) * radius;
+      const y = Math.sin(radians) * radius;
+      return {
+        transform: [
+          { translateX: x },
+          { translateY: y },
+        ],
+      };
+    }
+  });
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      isDragging.value = true;
+      // Calculate current position from orbit
+      const currentAngle = initialAngle + angleOffset.value + animationProgress.value * 360;
+      const radians = (currentAngle * Math.PI) / 180;
+      const currentX = Math.cos(radians) * radius;
+      const currentY = Math.sin(radians) * radius;
+      offsetX.value = currentX;
+      offsetY.value = currentY;
+    })
+    .onUpdate((e) => {
+      dragX.value = e.translationX;
+      dragY.value = e.translationY;
+    })
+    .onEnd(() => {
+      // Calculate final position
+      const finalX = dragX.value + offsetX.value;
+      const finalY = dragY.value + offsetY.value;
+      
+      // Calculate angle from center
+      const newAngle = (Math.atan2(finalY, finalX) * 180) / Math.PI;
+      const normalizedAngle = ((newAngle % 360) + 360) % 360;
+      
+      // Calculate current orbit angle
+      const currentOrbitAngle = initialAngle + angleOffset.value + animationProgress.value * 360;
+      
+      // Calculate the difference and update angleOffset
+      let angleDiff = normalizedAngle - currentOrbitAngle;
+      // Normalize to shortest path (-180 to 180)
+      if (angleDiff > 180) angleDiff -= 360;
+      if (angleDiff < -180) angleDiff += 360;
+      
+      // Snap to orbit by updating angleOffset
+      angleOffset.value = withSpring(angleOffset.value + angleDiff, {
+        damping: 15,
+        stiffness: 150,
+      });
+      
+      isDragging.value = false;
+      dragX.value = withSpring(0, { damping: 15, stiffness: 150 });
+      dragY.value = withSpring(0, { damping: 15, stiffness: 150 });
+      offsetX.value = 0;
+      offsetY.value = 0;
+    });
+
   return (
-    <View style={[styles.bookContainer, position]}>
-      <Text style={styles.bookEmoji}>{emoji}</Text>
-    </View>
+    <GestureDetector gesture={panGesture}>
+      <Animated.View
+        style={[
+          styles.bookContainer,
+          {
+            position: 'absolute',
+            left: ORBIT_CENTER_X,
+            top: ORBIT_CENTER_Y,
+          },
+          animatedStyle,
+        ]}
+      >
+        <Text style={styles.bookEmoji}>{emoji}</Text>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
-const brainIconAsset = require('../../assets/brain-icon.png');
-
 function BrainIcon({ size = 24, color = '#0d1b2a' }: { size?: number; color?: string }) {
   return (
-    <Image
-      source={brainIconAsset}
-      style={[styles.brainIcon, { width: size, height: size, tintColor: color }]}
-      resizeMode="contain"
+    <HugeiconsIcon
+      icon={BrainIconSvg}
+      size={size}
+      color={color}
+      strokeWidth={1.5}
     />
   );
 }
@@ -79,19 +209,43 @@ export function WelcomeScreen() {
     router.push('/(auth)/sign-in');
   };
 
+  // Generate random star positions for space effect (stars appear everywhere including orbital area)
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  
+  const stars = useMemo(() => {
+    return Array.from({ length: 80 }, (_, i) => ({
+      id: i,
+      top: Math.random() * screenHeight,
+      left: Math.random() * screenWidth,
+      size: Math.random() * 2 + 1,
+      opacity: Math.random() * 0.5 + 0.3,
+    }));
+  }, [screenWidth, screenHeight]);
+
   return (
     <View style={styles.background}>
-      <View style={styles.gradientBlobPrimary} />
-      <View style={styles.gradientBlobSecondary} />
+      {/* Stars for space effect */}
+      {stars.map((star) => (
+        <View
+          key={star.id}
+          style={[
+            styles.spaceStar,
+            {
+              top: star.top,
+              left: star.left,
+              width: star.size,
+              height: star.size,
+              opacity: star.opacity,
+            },
+          ]}
+        />
+      ))}
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.hero}>
           <View style={styles.orbitContainer}>
-            <View style={[styles.orbit, styles.outerOrbit]} />
-            <View style={[styles.orbit, styles.middleOrbit]} />
-            <View style={[styles.orbit, styles.innerOrbit]} />
             <View style={styles.star}>
-              <BrainIcon size={28} color={palette.slate} />
+              <BrainIcon size={28} color={palette.midnight} />
             </View>
 
             {floatingBooks.map((item) => (
@@ -102,6 +256,10 @@ export function WelcomeScreen() {
 
         <View style={styles.bottomSheet}>
           <View style={styles.sheetHeader}>
+            <View style={styles.logoContainer}>
+              <HugeiconsIcon icon={BrainIconSvg} />
+              <Text style={styles.logoLetter}>C</Text>
+            </View>
             <View style={styles.logoMark}>
               <BrainIcon size={24} color={palette.ivory} />
             </View>
@@ -157,37 +315,28 @@ export function WelcomeScreen() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
+    backgroundColor: palette.midnight,
+  },
+  spaceStar: {
+    position: 'absolute',
     backgroundColor: palette.ivory,
-  },
-  gradientBlobPrimary: {
-    position: 'absolute',
-    top: -120,
-    left: -60,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: palette.cloud,
-    opacity: 0.35,
-  },
-  gradientBlobSecondary: {
-    position: 'absolute',
-    top: -40,
-    right: -80,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: palette.slate,
-    opacity: 0.25,
+    borderRadius: 50,
   },
   safeArea: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   hero: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 40,
+    paddingTop: 20,
+    paddingBottom: 350, // Ensure orbit area stays above bottom sheet
+    overflow: 'visible',
   },
   orbitContainer: {
     width: 320,
@@ -195,27 +344,7 @@ const styles = StyleSheet.create({
     borderRadius: 160,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  orbit: {
-    position: 'absolute',
-    borderColor: 'rgba(255,255,255,0.7)',
-    borderWidth: 1,
-    opacity: 0.8,
-  },
-  outerOrbit: {
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-  },
-  middleOrbit: {
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-  },
-  innerOrbit: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    overflow: 'visible',
   },
   star: {
     width: 54,
@@ -237,13 +366,10 @@ const styles = StyleSheet.create({
   bookEmoji: {
     fontSize: 48,
   },
-  brainIcon: {
-    // Image style for brain icon
-  },
   bottomSheet: {
     backgroundColor: '#ffffff',
     marginHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 0,
     borderRadius: 32,
     paddingHorizontal: 24,
     paddingVertical: 28,
@@ -259,6 +385,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 24,
   },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   logoMark: {
     width: 44,
     height: 44,
@@ -268,8 +399,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoLetter: {
-    color: palette.ivory,
+    color: palette.midnight,
     fontSize: 20,
+    fontWeight: '700',
   },
   dismissButton: {
     width: 36,

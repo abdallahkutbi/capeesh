@@ -17,6 +17,14 @@ interface SplashScreenProps {
   onFinish: () => void;
 }
 
+const palette = {
+  midnight: '#0d1b2a',
+  deepSea: '#1b263b',
+  slate: '#415a77',
+  cloud: '#778da9',
+  ivory: '#e0e1dd',
+};
+
 const LOGO_TEXT = 'Capeesh';
 
 export function SplashScreen({ onFinish }: SplashScreenProps) {
@@ -122,7 +130,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0d1b2a', // Darkest blue-black from palette
+    backgroundColor: palette.midnight, // Darkest blue-black from palette
   },
   content: {
     alignItems: 'center',
