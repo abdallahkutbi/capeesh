@@ -1,11 +1,11 @@
 import React from 'react';
 import {
+  Image,
   Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppleSignIn } from './useAppleSignIn';
@@ -18,10 +18,17 @@ const palette = {
   ivory: '#e0e1dd',
 };
 
+// 8 emojis scattered at varying distances - some close, some far from the brain
+// Orbit container is 320x320, center at 160,160
 const floatingBooks = [
-  { id: 'stack', emoji: '📚', position: { top: 50, left: 36 } },
-  { id: 'single', emoji: '📖', position: { top: 120, right: 28 } },
-  { id: 'open', emoji: '📕', position: { bottom: 220, left: 32 } },
+  { id: 'stack', emoji: '📚', position: { top: 50, left: 145 } }, // Close to brain, top-right area
+  { id: 'single', emoji: '📖', position: { top: 20, right: 50 } }, // Far from brain, top
+  { id: 'open', emoji: '📕', position: { top: 120, right: 5 } }, // Medium distance, right
+  { id: 'notebook', emoji: '📓', position: { bottom: 40, right: 60 } }, // Close, bottom-right
+  { id: 'green', emoji: '📗', position: { bottom: 5, left: 120 } }, // Far, bottom
+  { id: 'blue', emoji: '📘', position: { bottom: 100, left: 5 } }, // Medium, bottom-left
+  { id: 'orange', emoji: '📙', position: { top: 100, left: 5 } }, // Medium, left
+  { id: 'spiral', emoji: '📔', position: { top: 30, left: 50 } }, // Close, top-left
 ];
 
 function FloatingBook({
@@ -38,12 +45,15 @@ function FloatingBook({
   );
 }
 
+const brainIconAsset = require('../../assets/brain-icon.png');
+
 function BrainIcon({ size = 24, color = '#0d1b2a' }: { size?: number; color?: string }) {
   return (
-    <View style={[styles.brainIconContainer, { width: size, height: size }]}>
-      <View style={[styles.brainLeftHemisphere, { width: size * 0.45, height: size * 0.9, backgroundColor: color }]} />
-      <View style={[styles.brainRightHemisphere, { width: size * 0.45, height: size * 0.9, backgroundColor: color }]} />
-    </View>
+    <Image
+      source={brainIconAsset}
+      style={[styles.brainIcon, { width: size, height: size, tintColor: color }]}
+      resizeMode="contain"
+    />
   );
 }
 
@@ -127,11 +137,7 @@ export function WelcomeScreen() {
               onPress={handleAppleSignIn}
               disabled={isLoadingApple}
             >
-              {isLoadingApple ? (
-                <ActivityIndicator size="small" color={palette.deepSea} />
-              ) : (
-                <Text style={styles.socialText}></Text>
-              )}
+              <Text style={styles.socialText}></Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -231,21 +237,8 @@ const styles = StyleSheet.create({
   bookEmoji: {
     fontSize: 48,
   },
-  brainIconContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 1,
-  },
-  brainLeftHemisphere: {
-    borderRadius: 12,
-    borderTopRightRadius: 2,
-    borderBottomRightRadius: 2,
-  },
-  brainRightHemisphere: {
-    borderRadius: 12,
-    borderTopLeftRadius: 2,
-    borderBottomLeftRadius: 2,
+  brainIcon: {
+    // Image style for brain icon
   },
   bottomSheet: {
     backgroundColor: '#ffffff',
